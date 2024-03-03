@@ -1,10 +1,10 @@
 #include <iostream>
-#include <iomanip>
 #include <cstdlib>
 #include <ctime>
 #include <vector>
 #include <string>
 #include <limits>
+#include<iomanip>
 
 using namespace std;
 
@@ -118,16 +118,13 @@ void showScorecard(const Team& team) {
     cout << "Player\t\tRuns\tBalls\tFours\tSixes\tStrike Rate\tStatus" << endl;
     cout << "---------------------------------------------" << endl;
     for (const auto& player : team.players) {
+        float strikeRate = (player.balls == 0) ? 0 : (static_cast<float>(player.runs) / player.balls) * 100;
         cout << setw(10) << left << player.name << "\t"
              << setw(6) << right << player.runs << "\t"
              << setw(5) << right << player.balls << "\t"
              << setw(5) << right << player.fours << "\t"
-             << setw(5) << right << player.sixes << "\t";
-        if (player.balls == 0) {
-            cout << setw(11) << right << "0.00" << "\t";
-        } else {
-            cout << setw(11) << right << fixed << setprecision(2) << player.strikeRate << "\t";
-        }
+             << setw(5) << right << player.sixes << "\t"
+             << setw(11) << right << fixed << setprecision(2) << strikeRate << "\t";
         if (player.status == -1) {
             cout << "Out";
         } else if (player.status == 0) {
@@ -179,7 +176,7 @@ void simulateBatting(Team& battingTeam, int numOvers) {
             }
             balls++;
 
-            if (balls == 6) {
+            if (balls == 6 && currentBatsmanIndex < battingTeam.players.size() && overs < numOvers) {
                 balls = 0;
                 overs++;
                 cout << "End of over " << overs << endl;
@@ -191,15 +188,11 @@ void simulateBatting(Team& battingTeam, int numOvers) {
         } else {
             cout << "Invalid input! Press 'hit' to play a shot." << endl;
         }
-
-        // Update strike rate
-        if (currentBatsman.balls > 0) {
-            currentBatsman.strikeRate = (static_cast<float>(currentBatsman.runs) / currentBatsman.balls) * 100;
-        }
     }
 
     // Display the batting team's final scorecard
     cout << "Batting innings completed for team " << battingTeam.name << ". Final scorecard:" << endl;
+    cout << "Total score: " << totalRuns << " runs"<< endl;
     showScorecard(battingTeam);
 }
 
@@ -217,7 +210,7 @@ void simulateBowling(Team& battingTeam, int numOvers) {
         Player& currentBatsman = battingTeam.players[currentBatsmanIndex];
 
         string hit;
-        cout << "Press 'bowl' to play a shot: ";
+        cout << "Press 'bowl' to bowl: ";
         cin >> hit;
 
         if (hit == "bowl") {
@@ -243,56 +236,84 @@ void simulateBowling(Team& battingTeam, int numOvers) {
             }
             balls++;
 
-            if (balls == 6) {
+            if (balls == 6 && currentBatsmanIndex < battingTeam.players.size() && overs < numOvers) {
                 balls = 0;
                 overs++;
                 cout << "End of over " << overs << endl;
-                cout << "Total score: " << totalRuns << " runs for " << overs << " overs." << endl;
+                cout << "Total score: " << totalRuns << " runs"<< endl;
 
                 // Show the scorecard for the batting team
                 showScorecard(battingTeam);
             }
         } else {
-            cout << "Invalid input! Press 'hit' to play a shot." << endl;
-        }
-
-        // Update strike rate
-        if (currentBatsman.balls > 0) {
-            currentBatsman.strikeRate = (static_cast<float>(currentBatsman.runs) / currentBatsman.balls) * 100;
+            cout << "Invalid input! Press 'bowl' to bowl." << endl;
         }
     }
 
     // Display the batting team's final scorecard
     cout << "Batting innings completed for team " << battingTeam.name << ". Final scorecard:" << endl;
+    cout << "Total score: " << totalRuns << " runs for " << overs << " overs." << endl;
     showScorecard(battingTeam);
 }
 
 int main() {
     srand(time(0));
 
-    Team userTeam;
-    cout << "Enter the name of your team: ";
-    cin >> userTeam.name;
-    int numUserPlayers = getNumericInput("Enter the number of players for your team (max 5): ", 1, 5);
-    initializePlayers(userTeam, numUserPlayers, true);
+    // Display welcome message
+    cout << "---------------------------------------" << endl;
+    cout << "|=========== GULLY-CRICKET ===========|" << endl;
+    cout << "|                                     |" << endl;
+    cout << "|   Welcome to our GULLY CRICKET..!   |" << endl;
+    cout << "---------------------------------------" << endl;
 
-    Team computerTeam;
-    computerTeam.name = "Computer";
-    int numComputerPlayers = numUserPlayers;
-    initializePlayers(computerTeam, numComputerPlayers, false);
+    // Display menu
+    cout << "Choose a game mode:" << endl;
+    cout << "1. Player vs Computer" << endl;
+    cout << "2. Player vs Player" << endl;
+    cout << "Enter your choice (1/2): ";
 
-    bool userWinsToss = whoWinsToss();
-    bool userBatsFirst = chooseBatOrBall(userWinsToss);
+    int choice;
+    cin >> choice;
 
-    int numOvers = chooseNumberOfOvers();
-    cout << "You chose to play " << numOvers << " overs match." << endl;
+    switch (choice) {
+        case 1: {
+            // Player vs Computer mode
+            Team userTeam;
+            cout << "Enter the name of your team: ";
+            cin >> userTeam.name;
+            int numUserPlayers = getNumericInput("Enter the number of players for your team (max 5): ", 1, 5);
+            initializePlayers(userTeam, numUserPlayers, true);
 
-    if (userBatsFirst) {
-        simulateBatting(userTeam, numOvers);
-        simulateBowling(computerTeam, numOvers);
-    } else {
-        simulateBowling(computerTeam, numOvers);
-        simulateBatting(userTeam, numOvers);
+            Team computerTeam;
+            computerTeam.name = "Computer";
+            int numComputerPlayers = numUserPlayers;
+            initializePlayers(computerTeam, numComputerPlayers, false);
+
+            bool userWinsToss = whoWinsToss();
+            bool userBatsFirst = chooseBatOrBall(userWinsToss);
+
+            int numOvers = chooseNumberOfOvers();
+            cout << "You chose to play " << numOvers << " overs match." << endl;
+
+            if (userBatsFirst) {
+                simulateBatting(userTeam, numOvers);
+                simulateBowling(computerTeam, numOvers);
+            } else {
+                simulateBowling(computerTeam, numOvers);
+                simulateBatting(userTeam, numOvers);
+            }
+
+            break;
+        }
+        case 2: {
+            // Player vs Player mode
+            // Implement player vs player logic
+            cout << "Player vs Player mode is not implemented yet." << endl;
+            break;
+        }
+        default:
+            cout << "Invalid choice! Exiting the game." << endl;
+            break;
     }
 
     return 0;
